@@ -1,2 +1,8 @@
 .vscode/
 
+# generated files for xdpfw_kern
+*.o
+*.ll
+
+# generated files for xdpfw_user
+xdpfw_user
