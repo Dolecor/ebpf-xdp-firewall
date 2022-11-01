@@ -609,7 +609,7 @@ int parse_cmdline_args(int argc, char **argv, struct prog_option *poptions,
 			increase_log_level();
 			break;
 		case VERSION_SHORT_OPT:
-			printf("%s version %s using libbpf version %s\n",
+			printf("%s using xdp-tools version %s, libbpf version %s\n",
 			       prog,
 			       TOOLS_VERSION,
 			       get_libbpf_version());

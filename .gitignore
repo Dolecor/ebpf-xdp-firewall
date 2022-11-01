@@ -4,5 +4,5 @@
 *.o
 *.ll
 
-# generated files for xdpfw_user
-xdpfw_user
+# generated files for xdpfwctl
+xdpfwctl
