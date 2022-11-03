@@ -3,8 +3,10 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 
-SEC("xdpfw")
-int xdpfw_prog(struct xdp_md *ctx)
+#include "xdpfw_common.h"
+
+SEC(XDPOBJ_PROGSEC)
+int XDP_FUNCTION(struct xdp_md *ctx)
 {
     return XDP_PASS;
 }
