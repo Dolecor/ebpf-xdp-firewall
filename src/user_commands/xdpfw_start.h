@@ -10,6 +10,6 @@ struct startopt {
     enum xdp_attach_mode mode;
 };
 
-int xdpfw_start();
+int xdpfw_start(const struct startopt *opt);
 
 #endif /* XDPFW_START_H */

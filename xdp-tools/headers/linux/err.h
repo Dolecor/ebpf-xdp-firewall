@@ -31,4 +31,9 @@ static inline bool IS_ERR_OR_NULL(const void *ptr)
 	return (!ptr) || IS_ERR_VALUE((unsigned long)ptr);
 }
 
+static inline void * ERR_CAST(const void *ptr)
+{
+	return (void *) ptr;
+}
+
 #endif

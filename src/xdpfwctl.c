@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <linux/err.h>
 
@@ -16,12 +17,16 @@
 #include "xdpfw_common.h"
 #include "user_commands/xdpfw_start.h"
 #include "user_commands/xdpfw_stop.h"
+//#include "user_commands/xdpfw_status.h"
 
 #define DEFAULT_ATTACH_MODE XDP_MODE_SKB
+//#define DEFAULT_STATUS_STATS false
 
 static struct prog_option start_options[] = {
-    DEFINE_OPTION("dev", OPT_IFNAME, struct startopt, iface, .positional = true,
-                  .metavar = "<ifname>", .required = true,
+    DEFINE_OPTION("dev", OPT_IFNAME, struct startopt, iface,
+                  .metavar = "<ifname>",
+                  .positional = true,
+                  .required = true,
                   .help = "Start xdpfw on device <ifname>"),
     END_OPTIONS
 };
@@ -37,8 +42,10 @@ int do_start(const void *cfg, __unused const char *pin_root_path)
 }
 
 static struct prog_option stop_options[] = {
-    DEFINE_OPTION("dev", OPT_IFNAME, struct stopopt, iface, .positional = true,
-                  .metavar = "<ifname>", .required = true,
+    DEFINE_OPTION("dev", OPT_IFNAME, struct stopopt, iface,
+                  .metavar = "<ifname>",
+                  .positional = true,
+                  .required = true,
                   .help = "Stop xdpfw on device <ifname>"),
     END_OPTIONS
 };
@@ -50,6 +57,31 @@ int do_stop(const void *cfg, __unused const char *pin_root_path)
     const struct stopopt *opt = cfg;
     return xdpfw_stop(opt);
 }
+
+// static struct prog_option status_options[] = {
+//     DEFINE_OPTION("dev", OPT_IFNAME, struct statusopt, iface,
+//                   .metavar = "<ifname>",
+//                   .positional = true,
+//                   .required = true,
+//                   .help = "Print status of xdpfw on device <ifname>"),
+//     DEFINE_OPTION("stats", OPT_BOOL, struct statusopt, stats,
+//                   .short_opt = 's',
+//                   .help = "Print number of denied packets"),
+//     // DEFINE_OPTION("filters", OPT_BOOL, struct statusopt, filters,
+//     //               .short_opt = 'f',
+//     //               .help = "Print list of active filters"),
+//     END_OPTIONS
+// };
+
+// static const struct statusopt defaults_status = {
+//     .stats = DEFAULT_STATUS_STATS,
+// };
+
+// int do_status(const void *cfg, __unused const char *pin_root_path)
+// {
+//     const struct statusopt *opt = cfg;
+//     return xdpfw_status(opt);
+// }
 
 int print_help(__unused const void *cfg, __unused const char *pin_root_path)
 {
