@@ -12,8 +12,10 @@
 #define _COMMON_PROG_NAME xdpfw
 #define COMMON_PROG_NAME textify(_COMMON_PROG_NAME)
 
-#define XDPOBJ_PROGNAME "xdpfw_kern.o"
+#define XDPOBJ_FILENAME "xdpfw_kern.o"
 #define XDPOBJ_PROGSEC COMMON_PROG_NAME
 #define XDP_FUNCTION _concat(_COMMON_PROG_NAME, _prog)
+
+#define PROGCTL_NAME (COMMON_PROG_NAME "ctl")
 
 #endif /* XDPFW_COMMON_H */

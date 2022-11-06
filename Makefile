@@ -8,4 +8,4 @@ xdpfw:
 xdpfw-clean:
 	$(MAKE) -C ./src clean
 
-.PHONY: xdpfw-clean
+.PHONY: xdpfw xdpfw-clean

@@ -63,7 +63,7 @@ all: $(USER_TARGETS) $(XDP_OBJ) $(EXTRA_TARGETS) $(TEST_TARGETS) man
 
 .PHONY: clean
 clean::
-	$(Q)rm -f $(USER_TARGETS) $(XDP_OBJ) $(USER_OBJ) $(TEST_OBJ) $(USER_GEN) *.ll
+	$(Q)rm -f $(USER_TARGETS) $(XDP_OBJ) $(USER_OBJ) $(TEST_OBJ) $(USER_GEN) $(USER_TARGETS_OBJS) *.ll
 
 .PHONY: install
 install: all install_local
@@ -99,9 +99,12 @@ LIB_H := ${LIB_OBJS:.o=.h}
 $(LIB_OBJS): %.o: %.c %.h $(LIB_H)
 	$(Q)$(MAKE) -C $(dir $@) $(notdir $@)
 
+$(USER_TARGETS_OBJS): %.o: %.c %.h  $(USER_TARGETS_OBJS_DEPS)
+	$(QUIET_CC)$(CC) $(CFLAGS) -Wall -c -o $@ $<
+
 ALL_EXEC_TARGETS=$(USER_TARGETS) $(TEST_TARGETS)
-$(ALL_EXEC_TARGETS): %: %.c  $(OBJECT_LIBBPF) $(OBJECT_LIBXDP) $(LIBMK) $(LIB_OBJS) $(KERN_USER_H) $(EXTRA_DEPS) $(EXTRA_USER_DEPS)
-	$(QUIET_CC)$(CC) -Wall $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $(LIB_OBJS) \
+$(ALL_EXEC_TARGETS): %: %.c  $(OBJECT_LIBBPF) $(OBJECT_LIBXDP) $(LIBMK) $(LIB_OBJS) $(KERN_USER_H) $(EXTRA_DEPS) $(EXTRA_USER_DEPS) $(USER_TARGETS_OBJS)
+	$(QUIET_CC)$(CC) -Wall $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $(LIB_OBJS) $(USER_TARGETS_OBJS) \
 	 $< $(LDLIBS)
 
 $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EXTRA_DEPS) $(BPF_HEADERS) $(LIBMK)

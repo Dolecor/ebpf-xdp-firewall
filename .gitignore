@@ -1,8 +1,5 @@
 .vscode/
 
-# generated files for xdpfw_kern
+xdpfwctl
 *.o
 *.ll
-
-# generated files for xdpfwctl
-xdpfwctl
