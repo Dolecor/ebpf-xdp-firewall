@@ -9,7 +9,7 @@ USER_TARGETS_OBJS := $(addprefix $(XDPFWCTL_CMDS_PREFIX), \
 						$(addsuffix .o, $(XDPFWCTL_CMDS)))
 #USER_TARGETS_OBJS_DEPS := $(addprefix $(XDPFWCTL_COMMANDS), )
 
-KERN_USER_H := ../xdp-tools/headers/xdp/xdp_stats_kern_user.h
+KERN_USER_H := xdpfw_common.h
 
 LIB_DIR = ../xdp-tools/lib/
 include $(LIB_DIR)/common.mk

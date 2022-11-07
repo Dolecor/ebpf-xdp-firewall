@@ -68,9 +68,23 @@ static int print_status(const struct statusopt *opt, const char *pin_root_path)
         xdp_prog = NULL;
         goto out;
     } else {
-        printf("%s is started on interface '%s' with id %d in %s mode\n",
-               PROGCTL_NAME, opt->iface.ifname, xdp_program__id(xdp_prog),
-               xdp_multiprog__is_legacy(xdp_mp) ? "legacy" : "multiprog");
+        bool is_legacy = xdp_multiprog__is_legacy(xdp_mp);
+
+        printf("  %s is started on interface '%s'\n",
+               PROGCTL_NAME, opt->iface.ifname);
+
+        printf("  Load mode: %s\n",
+               is_legacy ? "legacy" : "multiprog");
+
+        if (!is_legacy) {
+            printf("  Dispatcher id: %d\n",
+                   xdp_program__id(xdp_multiprog__main_prog(xdp_mp)));
+        }
+        
+        printf("  Prog id: %d\n"
+               "  Attach mode: %s\n",
+               xdp_program__id(xdp_prog),
+               mode == XDP_MODE_SKB ? "skb" : "native or hw");
     }
 
     if (opt->stats) {

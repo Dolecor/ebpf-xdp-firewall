@@ -3,10 +3,10 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 
-#include "xdp/xdp_stats_kern_user.h"
-#include "xdp/xdp_stats_kern.h"
-
 #include "xdpfw_common.h"
+
+#include "xdp/xdp_stats_kern.h"
+#include "xdpfw_filter_kern.h"
 
 #define DEFAULT_ACTION XDP_PASS
 

@@ -93,7 +93,10 @@ int print_help(__unused const void *cfg, __unused const char *pin_root_path)
         "       start       - start firewall on an interface\n"
         "       stop        - stop firewall on an interface\n"
         "       status      - print status of firewall on an interface\n"
-        //TODO: start, stop, status, reset, list-filter, add-filter, remove-filter
+        // "       reset       - reset stats and filters of firewall on an interface\n"
+        // "       list-filter - list active filters of firewall on an interface\n"
+        // "       add-filter  - add filter to firewall on an interface\n"
+        // "       del-filter  - delete filter from firewall on an interface\n"
         "       help        - show this help message\n"
         "\n"
         "Use '%s COMMAND --help' to see options for specific command\n",
@@ -103,7 +106,7 @@ int print_help(__unused const void *cfg, __unused const char *pin_root_path)
 }
 
 // TODO: add commands
-//       start, stop, status, reset, list-filter, add-filter, remove-filter
+//       reset, list-filter, add-filter, remove-filter
 static const struct prog_command cmds[] = {
     DEFINE_COMMAND(start, "Start firewall (load XDP program) on an interface"),
     DEFINE_COMMAND(stop, "Stop firewall (unload XDP program) on an interface"),

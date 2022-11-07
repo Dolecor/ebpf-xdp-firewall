@@ -12,7 +12,6 @@
 #include "util.h"
 #include "params.h"
 #include "logging.h"
-#include "xdp/xdp_stats_kern_user.h"
 
 #include "../xdpfw_common.h"
 #include "xdpfw_helpers.h"
@@ -32,6 +31,11 @@ static int remove_maps(const char *pin_root_path)
 	}
 
     err = unlink_pinned_map(pin_fd, textify(XDP_STATS_MAP_NAME));
+    if (err) {
+        goto out;
+    }
+
+    err = unlink_pinned_map(pin_fd, textify(XDPFW_FILTER_MAP_NAME));
     if (err) {
         goto out;
     }

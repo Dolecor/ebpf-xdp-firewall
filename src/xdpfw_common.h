@@ -18,4 +18,7 @@
 
 #define PROGCTL_NAME (COMMON_PROG_NAME "ctl")
 
+#include "xdp/xdp_stats_kern_user.h"
+#include "xdpfw_filter_kern_user.h"
+
 #endif /* XDPFW_COMMON_H */
