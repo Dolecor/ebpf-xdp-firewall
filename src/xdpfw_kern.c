@@ -3,12 +3,18 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 
+#include "xdp/xdp_stats_kern_user.h"
+#include "xdp/xdp_stats_kern.h"
+
 #include "xdpfw_common.h"
+
+#define DEFAULT_ACTION XDP_PASS
 
 SEC(XDPOBJ_PROGSEC)
 int XDP_FUNCTION(struct xdp_md *ctx)
 {
-    return XDP_PASS;
+    __u32 action = DEFAULT_ACTION;
+    return xdp_stats_record_action(ctx, action);
 }
 
 char _license[] SEC("license") = "GPL";

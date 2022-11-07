@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 #include <xdp/libxdp.h>
@@ -8,17 +12,44 @@
 #include "util.h"
 #include "params.h"
 #include "logging.h"
+#include "xdp/xdp_stats_kern_user.h"
 
 #include "../xdpfw_common.h"
 #include "xdpfw_helpers.h"
 #include "xdpfw_stop.h"
 
-int unload_xdp_program(const struct stopopt *opt)
+static int remove_maps(const char *pin_root_path)
+{
+    int pin_fd;
+    int err = 0;
+
+    pin_fd = open(pin_root_path, O_DIRECTORY);
+    if (pin_fd < 0) {
+		err = -errno;
+		pr_warn("Unable to open pin directory %s: %s\n",
+			pin_root_path, strerror(-err));
+		goto out;
+	}
+
+    err = unlink_pinned_map(pin_fd, textify(XDP_STATS_MAP_NAME));
+    if (err) {
+        goto out;
+    }
+
+out:
+    if (pin_fd >= 0) {
+        close(pin_fd);
+    }
+
+    return err;
+}
+
+static int unload_xdp_program(const struct stopopt *opt, const char *pin_root_path)
 {
     struct xdp_program *xdp_prog;
     struct xdp_multiprog *xdp_mp;
     enum xdp_attach_mode mode;
-    __unused LIBBPF_OPTS(bpf_object_open_opts, opts);
+    LIBBPF_OPTS(bpf_object_open_opts, opts, .pin_root_path = pin_root_path);
     char errmsg[STRERR_BUFSIZE];
     int err = EXIT_SUCCESS;
 
@@ -47,12 +78,18 @@ int unload_xdp_program(const struct stopopt *opt)
     pr_info("%s stopped on interface '%s'\n", COMMON_PROG_NAME,
             opt->iface.ifname);
 
+    err = remove_maps(pin_root_path);
+    if (err) {
+        pr_warn("Tried to remove maps but failed (%s).", strerror(-err));
+		goto out;
+    }
+
 out:
     xdp_multiprog__close(xdp_mp);
     return err;
 }
 
-int xdpfw_stop(const struct stopopt *opt)
+int xdpfw_stop(const struct stopopt *opt, const char *pin_root_path)
 {
-    return unload_xdp_program(opt);
+    return unload_xdp_program(opt, pin_root_path);
 }

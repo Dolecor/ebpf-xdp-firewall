@@ -4,12 +4,12 @@
 #ifndef __XDP_STATS_KERN_H
 #define __XDP_STATS_KERN_H
 
-/* Data record type 'struct datarec' is defined in common/xdp_stats_kern_user.h,
+/* Data record type 'struct datarec' is defined in xdp/xdp_stats_kern_user.h,
  * programs using this header must first include that file.
  */
 #ifndef __XDP_STATS_KERN_USER_H
-#warning "You forgot to #include <../common/xdp_stats_kern_user.h>"
-#include <../common/xdp_stats_kern_user.h>
+#warning "You forgot to #include <xdp/xdp_stats_kern_user.h>"
+#include <xdp/xdp_stats_kern_user.h>
 #endif
 
 /* Keeps stats per (enum) xdp_action */

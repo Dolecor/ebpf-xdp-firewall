@@ -16,26 +16,14 @@
 #include "xdpfw_helpers.h"
 #include "xdpfw_start.h"
 
-bool xdpfw_is_loaded(int ifindex)
-{
-    struct xdp_program *xdp_prog;
-    struct xdp_multiprog *xdp_mp;
-    enum xdp_attach_mode mode;
-
-    xdp_prog = xdpfw__from_xdp_multiprog_from_iface(ifindex, &xdp_mp, &mode);
-    xdp_multiprog__close(xdp_mp);
-
-    return IS_ERR(xdp_prog);
-}
-
-int load_xdp_program(const struct startopt *opt)
+static int load_xdp_program(const struct startopt *opt, const char *pin_root_path)
 {
     struct xdp_program *xdp_prog = NULL;
-    LIBBPF_OPTS(bpf_object_open_opts, opts);
+    LIBBPF_OPTS(bpf_object_open_opts, opts, .pin_root_path = pin_root_path);
     char errmsg[STRERR_BUFSIZE];
     int err = EXIT_SUCCESS;
 
-    if (!xdpfw_is_loaded(opt->iface.ifindex)) {
+    if (xdpfw_is_loaded(opt->iface.ifindex)) {
         pr_warn("%s is already loaded on device\n", PROGCTL_NAME);
         err = EXIT_FAILURE;
         goto out;
@@ -69,7 +57,7 @@ out:
     return err;
 }
 
-int xdpfw_start(const struct startopt *opt)
+int xdpfw_start(const struct startopt *opt, const char *pin_root_path)
 {
-    return load_xdp_program(opt);
+    return load_xdp_program(opt, pin_root_path);
 }

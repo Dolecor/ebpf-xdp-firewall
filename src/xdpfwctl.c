@@ -17,10 +17,10 @@
 #include "xdpfw_common.h"
 #include "user_commands/xdpfw_start.h"
 #include "user_commands/xdpfw_stop.h"
-//#include "user_commands/xdpfw_status.h"
+#include "user_commands/xdpfw_status.h"
 
 #define DEFAULT_ATTACH_MODE XDP_MODE_SKB
-//#define DEFAULT_STATUS_STATS false
+#define DEFAULT_STATUS_STATS false
 
 static struct prog_option start_options[] = {
     DEFINE_OPTION("dev", OPT_IFNAME, struct startopt, iface,
@@ -35,10 +35,10 @@ static const struct startopt defaults_start = {
     .mode = DEFAULT_ATTACH_MODE,
 };
 
-int do_start(const void *cfg, __unused const char *pin_root_path)
+int do_start(const void *cfg, const char *pin_root_path)
 {
     const struct startopt *opt = cfg;
-    return xdpfw_start(opt);
+    return xdpfw_start(opt, pin_root_path);
 }
 
 static struct prog_option stop_options[] = {
@@ -52,36 +52,36 @@ static struct prog_option stop_options[] = {
 
 static const struct startopt defaults_stop = {};
 
-int do_stop(const void *cfg, __unused const char *pin_root_path)
+int do_stop(const void *cfg, const char *pin_root_path)
 {
     const struct stopopt *opt = cfg;
-    return xdpfw_stop(opt);
+    return xdpfw_stop(opt, pin_root_path);
 }
 
-// static struct prog_option status_options[] = {
-//     DEFINE_OPTION("dev", OPT_IFNAME, struct statusopt, iface,
-//                   .metavar = "<ifname>",
-//                   .positional = true,
-//                   .required = true,
-//                   .help = "Print status of xdpfw on device <ifname>"),
-//     DEFINE_OPTION("stats", OPT_BOOL, struct statusopt, stats,
-//                   .short_opt = 's',
-//                   .help = "Print number of denied packets"),
-//     // DEFINE_OPTION("filters", OPT_BOOL, struct statusopt, filters,
-//     //               .short_opt = 'f',
-//     //               .help = "Print list of active filters"),
-//     END_OPTIONS
-// };
+static struct prog_option status_options[] = {
+    DEFINE_OPTION("dev", OPT_IFNAME, struct statusopt, iface,
+                  .metavar = "<ifname>",
+                  .positional = true,
+                  .required = true,
+                  .help = "Print status of xdpfw on device <ifname>"),
+    DEFINE_OPTION("stats", OPT_BOOL, struct statusopt, stats,
+                  .short_opt = 's',
+                  .help = "Print number of denied packets"),
+    // DEFINE_OPTION("filters", OPT_BOOL, struct statusopt, filters,
+    //               .short_opt = 'f',
+    //               .help = "Print list of active filters"),
+    END_OPTIONS
+};
 
-// static const struct statusopt defaults_status = {
-//     .stats = DEFAULT_STATUS_STATS,
-// };
+static const struct statusopt defaults_status = {
+    .stats = DEFAULT_STATUS_STATS,
+};
 
-// int do_status(const void *cfg, __unused const char *pin_root_path)
-// {
-//     const struct statusopt *opt = cfg;
-//     return xdpfw_status(opt);
-// }
+int do_status(const void *cfg, const char *pin_root_path)
+{
+    const struct statusopt *opt = cfg;
+    return xdpfw_status(opt, pin_root_path);
+}
 
 int print_help(__unused const void *cfg, __unused const char *pin_root_path)
 {
@@ -92,6 +92,7 @@ int print_help(__unused const void *cfg, __unused const char *pin_root_path)
         "COMMAND can be one of:\n"
         "       start       - start firewall on an interface\n"
         "       stop        - stop firewall on an interface\n"
+        "       status      - print status of firewall on an interface\n"
         //TODO: start, stop, status, reset, list-filter, add-filter, remove-filter
         "       help        - show this help message\n"
         "\n"
@@ -106,6 +107,7 @@ int print_help(__unused const void *cfg, __unused const char *pin_root_path)
 static const struct prog_command cmds[] = {
     DEFINE_COMMAND(start, "Start firewall (load XDP program) on an interface"),
     DEFINE_COMMAND(stop, "Stop firewall (unload XDP program) on an interface"),
+    DEFINE_COMMAND(status, "Print status and stats of xdpfw on an interface"),
     { .name = "help", .func = print_help, .no_cfg = true },
     END_COMMANDS
 };

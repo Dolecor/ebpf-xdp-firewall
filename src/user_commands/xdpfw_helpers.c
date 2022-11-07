@@ -9,10 +9,23 @@
 #include "logging.h"
 
 #include "../xdpfw_common.h"
+#include "xdpfw_helpers.h"
 
-static int is_xdpfw_program(const struct xdp_program *xdp_prog)
+int is_xdpfw_program(const struct xdp_program *xdp_prog)
 {
     return !strcmp(xdp_program__name(xdp_prog), textify(XDP_FUNCTION));
+}
+
+bool xdpfw_is_loaded(int ifindex)
+{
+    struct xdp_program *xdp_prog;
+    struct xdp_multiprog *xdp_mp;
+    enum xdp_attach_mode mode;
+
+    xdp_prog = xdpfw__from_xdp_multiprog_from_iface(ifindex, &xdp_mp, &mode);
+    xdp_multiprog__close(xdp_mp);
+
+    return !IS_ERR_OR_NULL(xdp_prog);
 }
 
 struct xdp_program *
@@ -33,7 +46,6 @@ xdpfw__from_xdp_multiprog_from_iface(int ifindex, struct xdp_multiprog **xdp_mp,
     if (xdp_multiprog__is_legacy(*xdp_mp)) {
         xdp_prog = xdp_multiprog__main_prog(*xdp_mp);
         if (is_xdpfw_program(xdp_prog)) {
-            pr_debug("legacy\n");
             *mode = xdp_multiprog__attach_mode(*xdp_mp);
             goto out;
         }
@@ -41,7 +53,6 @@ xdpfw__from_xdp_multiprog_from_iface(int ifindex, struct xdp_multiprog **xdp_mp,
 
     while ((xdp_prog = xdp_multiprog__next_prog(xdp_prog, *xdp_mp))) {
         if (is_xdpfw_program(xdp_prog)) {
-            pr_debug("dispatcher\n");
             *mode = xdp_multiprog__attach_mode(*xdp_mp);
             goto out;
         }
@@ -49,7 +60,7 @@ xdpfw__from_xdp_multiprog_from_iface(int ifindex, struct xdp_multiprog **xdp_mp,
 
     pr_debug(
         "XDP loaded on device, but it is "
-        "nor xdp-dispatcher with %s, not either %s itself in legacy mode\n",
+        "neither xdp-dispatcher with %s, nor %s itself in legacy mode\n",
         COMMON_PROG_NAME, COMMON_PROG_NAME);
 
     xdp_prog = ERR_PTR(-ENOENT);
