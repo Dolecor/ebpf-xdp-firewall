@@ -3,32 +3,35 @@
 #ifndef XDPFW_FILTER_KERN_USER_H
 #define XDPFW_FILTER_KERN_USER_H
 
+#include <linux/limits.h>
 #include <linux/in.h>
-#include <linux/in6.h>
-#include <bpf/bpf_endian.h>
 
-enum filter_action {
-    ACTION_DENY = 1, /* XDP_DROP */
-    ACTION_PERMIT,   /* XDP_PASS */
-};
+#define FILTER_TYPE_END_OF_LIST     0 /* must be 0 */
+#define FILTER_TYPE_DENY            XDP_DROP  /* 1 */
+#define FILTER_TYPE_PERMIT          XDP_PASS  /* 2 */
+#define FILTER_TYPE_EMPTY_CELL      (U8_MAX - 1)
+#define FILTER_TYPE_NO_MATCH        ((__u8)~0U) /* U8_MAX */
 
-typedef __u8 filter_action_t;
+#define XDPFW_IP_ANY INADDR_ANY
+#define XDPFW_PORT_ANY (__u16)0
+
+typedef __u8 filter_type_t;
 
 /* TODO: add wildcard to IPs and range to ports */
 
 #pragma pack(push)
 #pragma pack(1) /* or padding fields? */
 struct filterrec {
-    struct in_addr src_ip;
-    struct in_addr dst_ip;
+    __be32 src_ip;
+    __be32 dst_ip;
     __u16 src_port;
     __u16 dst_port;
     __u8 protocol;
-    filter_action_t action;
+    filter_type_t type;
 };
 #pragma pack(pop)
 
-#define FILTERREC_MAX_ENTRIES 128
+#define XDPFW_FILTER_MAX_ENTRIES 128
 #define XDPFW_FILTER_MAP_NAME xdpfw_filter_map
 
 #endif /* XDPFW_FILTER_KERN_USER_H */
