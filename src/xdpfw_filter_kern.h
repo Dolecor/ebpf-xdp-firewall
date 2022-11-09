@@ -2,7 +2,7 @@
 
 #ifndef XDPFW_FILTER_KERN_H
 #define XDPFW_FILTER_KERN_H
-
+ 
 #include <linux/in.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
@@ -21,12 +21,6 @@ struct {
     __uint(pinning, LIBBPF_PIN_BY_NAME);
 } XDPFW_FILTER_MAP_NAME SEC(".maps");
 
-enum upper_proto {
-    ICMP = IPPROTO_ICMP, /* 1 */
-    TCP = IPPROTO_TCP,   /* 6 */
-    UDP = IPPROTO_UDP,   /* 17 */
-};
-
 struct upperhdr {
     enum upper_proto protocol;
     union {
@@ -42,8 +36,7 @@ struct upperhdr {
     } hdr;
 };
 
-#define filter_type_is_action(type) \
-    ((type == FILTER_TYPE_DENY) || (type == FILTER_TYPE_PERMIT))
+#define FILTER_FMT "sport: %d, dport: %d, proto: %d\n"
 
 static filter_type_t __always_inline
 __get_filter_verdict(const struct filterrec *filter, const struct iphdr *ip,
@@ -61,22 +54,22 @@ __get_filter_verdict(const struct filterrec *filter, const struct iphdr *ip,
     }
 
     if (upper->protocol != ICMP) {
-        if (!((upper->hdr.ports->dest == XDPFW_PORT_ANY)
+        if (!((filter->dst_port == XDPFW_PORT_ANY)
               || (upper->hdr.ports->dest == filter->dst_port))) {
             goto out;
         }
 
-        if (!((upper->hdr.ports->source == XDPFW_PORT_ANY)
+        if (!((filter->src_port == XDPFW_PORT_ANY)
               || (upper->hdr.ports->source == filter->src_port))) {
             goto out;
         }
     }
 
-    if (!((ip->daddr == XDPFW_IP_ANY) || (ip->daddr == filter->dst_ip))) {
+    if (!((filter->dst_ip == XDPFW_IP_ANY) || (ip->daddr == filter->dst_ip))) {
         goto out;
     }
 
-    if (!((ip->saddr == XDPFW_IP_ANY) || (ip->daddr == filter->src_ip))) {
+    if (!((filter->src_ip == XDPFW_IP_ANY) || (ip->saddr == filter->src_ip))) {
         goto out;
     }
 
@@ -96,12 +89,13 @@ get_filter_verdict(const struct iphdr *ip, const struct upperhdr *upper)
     for (__u32 i = 0; i < XDPFW_FILTER_MAX_ENTRIES; ++i) {
         __u32 key = i;
         filter = bpf_map_lookup_elem(&XDPFW_FILTER_MAP_NAME, &key);
-        if (!filter) {
-            break;
+        if (!filter || (filter->type == FILTER_TYPE_EMPTY_CELL)) {
+            continue;
         }
 
         verdict = __get_filter_verdict(filter, ip, upper);
-        if (filter_type_is_action(verdict)) {
+        if ((verdict == FILTER_TYPE_END_OF_LIST)
+            || filter_type_is_action(verdict)) {
             break;
         }
     }

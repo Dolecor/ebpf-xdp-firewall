@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 
+#include <arpa/inet.h>
 #include <linux/err.h>
 
 #include <bpf/bpf.h>
@@ -64,7 +65,30 @@ xdpfw__from_xdp_multiprog_from_iface(int ifindex, struct xdp_multiprog **xdp_mp,
         COMMON_PROG_NAME, COMMON_PROG_NAME);
 
     xdp_prog = ERR_PTR(-ENOENT);
+    xdp_multiprog__close(*xdp_mp);
 
 out:
     return xdp_prog;
+}
+
+char *inaddr_to_str(uint32_t ip, char *buf)
+{
+    if (ip == ANY_IP) {
+        strcpy(buf, ANY_STR);
+    } else {
+        inet_ntop(AF_INET, &ip, buf, INET_ADDRSTRLEN);
+    }
+
+    return buf;
+}
+
+char *port_to_str(uint16_t port, char *buf)
+{
+    if (port == ANY_PORT) {
+        strcpy(buf, ANY_STR);
+    } else {
+        sprintf(buf, "%d", port);
+    }
+
+    return buf;
 }

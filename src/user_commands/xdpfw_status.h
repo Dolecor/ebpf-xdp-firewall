@@ -8,7 +8,7 @@
 struct statusopt {
     struct iface iface;
     bool stats;
-    // bool filters;
+    bool filters;
 };
 
 int xdpfw_status(const struct statusopt *opt, const char *pin_root_path);
