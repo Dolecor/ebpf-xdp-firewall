@@ -36,8 +36,6 @@ struct upperhdr {
     } hdr;
 };
 
-#define FILTER_FMT "sport: %d, dport: %d, proto: %d\n"
-
 static filter_type_t __always_inline
 __get_filter_verdict(const struct filterrec *filter, const struct iphdr *ip,
                      const struct upperhdr *upper)

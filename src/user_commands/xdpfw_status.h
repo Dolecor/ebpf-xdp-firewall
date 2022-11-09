@@ -3,6 +3,8 @@
 #ifndef XDPFW_STATUS_H
 #define XDPFW_STATUS_H
 
+#include <stdbool.h>
+
 #include "params.h"
 
 struct statusopt {

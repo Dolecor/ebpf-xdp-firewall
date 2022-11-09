@@ -19,6 +19,7 @@
 #include "user_commands/xdpfw_stop.h"
 #include "user_commands/xdpfw_status.h"
 #include "user_commands/xdpfw_filter.h"
+#include "user_commands/xdpfw_reset.h"
 
 #define DEFAULT_ATTACH_MODE XDP_MODE_SKB
 #define DEFAULT_STATUS_STATS false
@@ -72,7 +73,7 @@ static struct prog_option status_options[] = {
                   .metavar = "<ifname>",
                   .positional = true,
                   .required = true,
-                  .help = "Print status of xdpfw on device <ifname>"),
+                  .help = "Print status on device <ifname>"),
     DEFINE_OPTION("stats", OPT_BOOL, struct statusopt, stats,
                   .short_opt = 's',
                   .help = "Print number of denied packets"),
@@ -137,33 +138,33 @@ static struct prog_option fadd_options[] = {
                   .required = true,
                   .help = "Add on device <ifname>"),
     DEFINE_OPTION("action", OPT_ENUM, struct filteraddopt, action,
-		          .metavar = "<action>",
+                  .metavar = "<action>",
                   .positional = true,
                   .required = true,
-		          .typearg = filter_actions,
-		          .help = "Specify <action> of filter"),
+                  .typearg = filter_actions,
+                  .help = "Specify <action> of filter"),
     DEFINE_OPTION("protocol", OPT_ENUM, struct filteraddopt, protocol,
-		          .metavar = "<proto>",
+                  .metavar = "<proto>",
                   .positional = true,
                   .required = true,
-		          .typearg = upper_protocols,
-		          .help = "Specify <proto> of filter"),
+                  .typearg = upper_protocols,
+                  .help = "Specify <proto> of filter"),
     DEFINE_OPTION("srcip", OPT_IPADDR, struct filteraddopt, src_ip,
-		          .metavar = "<ip>",
-		          .help = "Specify source ip of filter (default: 0.0.0.0 (any))"),
+                  .metavar = "<ip>",
+                  .help = "Specify source ip of filter (default: 0.0.0.0 (any))"),
     DEFINE_OPTION("dstip", OPT_IPADDR, struct filteraddopt, dst_ip,
-		          .metavar = "<ip>",
-		          .help = "Specify dest ip of filter (default: 0.0.0.0 (any))"),
+                  .metavar = "<ip>",
+                  .help = "Specify dest ip of filter (default: 0.0.0.0 (any))"),
     DEFINE_OPTION("sport", OPT_U16, struct filteraddopt, src_port,
-		          .metavar = "<port>",
-		          .help = "Specify source port of filter (default: 0 (any))"),
+                  .metavar = "<port>",
+                  .help = "Specify source port of filter (default: 0 (any))"),
     DEFINE_OPTION("dport", OPT_U16, struct filteraddopt, dst_port,
-		          .metavar = "<port>",
-		          .help = "Specify dest port of filter (default: 0 (any))"),
+                  .metavar = "<port>",
+                  .help = "Specify dest port of filter (default: 0 (any))"),
     DEFINE_OPTION("id", OPT_U32, struct filteraddopt, insert_at,
                   .short_opt = 'i',
-		          .metavar = "<id>",
-		          .help = "Specify <id> to insert at list of filters"),
+                  .metavar = "<id>",
+                  .help = "Specify <id> to insert at list of filters"),
     END_OPTIONS
 };
 
@@ -192,10 +193,10 @@ static struct prog_option frm_options[] = {
                   .required = true,
                   .help = "Remove from device <ifname>"),
     DEFINE_OPTION("id", OPT_U32, struct filterrmopt, filter_id,
-		          .metavar = "<id>",
+                  .metavar = "<id>",
                   .positional = true,
                   .required = true,
-		          .help = "Specify <id> of filter"),
+                  .help = "Specify <id> of filter"),
     END_OPTIONS
 };
 
@@ -211,6 +212,36 @@ int do_frm(const void *cfg, const char *pin_root_path)
     return xdpfw_filter_remove(opt, pin_dir);
 }
 
+static struct prog_option reset_options[] = {
+    DEFINE_OPTION("dev", OPT_IFNAME, struct resetopt, iface,
+                  .metavar = "<ifname>",
+                  .positional = true,
+                  .required = true,
+                  .help = "Reset on device <ifname>"),
+    DEFINE_OPTION("stats", OPT_BOOL, struct resetopt, stats,
+                  .short_opt = 's',
+                  .help = "Reset stats"),
+    DEFINE_OPTION("filters", OPT_BOOL, struct resetopt, filters,
+                  .short_opt = 'f',
+                  .help = "Reset filter list"),
+    END_OPTIONS
+};
+
+static const struct resetopt defaults_reset = {
+    .filters = false,
+    .stats = false,
+};
+
+int do_reset(const void *cfg, const char *pin_root_path)
+{
+    const struct resetopt *opt = cfg;
+    char pin_dir[PATH_MAX];
+
+    sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+
+    return xdpfw_reset(opt, pin_dir);
+}
+
 int print_help(__unused const void *cfg, __unused const char *pin_root_path)
 {
     fprintf(
@@ -224,7 +255,7 @@ int print_help(__unused const void *cfg, __unused const char *pin_root_path)
         "       flist       - list filters of firewall on an interface\n"
         "       fadd        - add filter to firewall on an interface\n"
         "       frm         - remove filter from firewall on an interface\n"
-        // "       reset       - reset stats and filters of firewall on an interface\n"
+        "       reset       - reset stats and filters of firewall on an interface\n"
         "       help        - show this help message\n"
         "\n"
         "Use '%s COMMAND --help' to see options for specific command\n",
@@ -240,7 +271,7 @@ static const struct prog_command cmds[] = {
     DEFINE_COMMAND(flist, "List filters of xdpfw on an interface"),
     DEFINE_COMMAND(fadd, "Add filter to xdpfw on an interface"),
     DEFINE_COMMAND(frm, "Remove filter from xdpfw on an interface"),
-//       reset
+    DEFINE_COMMAND(reset, "Reset xdpfw on an interface"),
     { .name = "help", .func = print_help, .no_cfg = true },
     END_COMMANDS
 };
@@ -252,6 +283,7 @@ union xdpfw_opts {
     struct filterlistopt flist;
     struct filteraddopt fadd;
     struct filterrmopt frm;
+    struct resetopt reset;
 };
 
 int main(int argc, char **argv)

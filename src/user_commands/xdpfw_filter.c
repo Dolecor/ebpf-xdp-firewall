@@ -116,7 +116,7 @@ static int add_filter(const char *pin_root_path, const struct filterrec *filter,
 
     for (list_end = 0; list_end < XDPFW_FILTER_MAX_ENTRIES - 1; ++list_end) {
         if (bpf_map_lookup_elem(map_fd, &list_end, &lookup_filter) != 0) {
-            pr_debug("bpf_map_lookup_elem failed (key:%u\n", list_end);
+            pr_debug("bpf_map_lookup_elem failed (key:%u)\n", list_end);
         }
 
         if (lookup_filter.type == FILTER_TYPE_END_OF_LIST) {
@@ -177,7 +177,7 @@ static int remove_filter(const char *pin_root_path, uint32_t id)
 
     for (list_end = 0; list_end < XDPFW_FILTER_MAX_ENTRIES - 1; ++list_end) {
         if (bpf_map_lookup_elem(map_fd, &list_end, &lookup_filter) != 0) {
-            pr_debug("bpf_map_lookup_elem failed (key:%u\n", list_end);
+            pr_debug("bpf_map_lookup_elem failed (key:%u)\n", list_end);
         }
 
         if (lookup_filter.type == FILTER_TYPE_END_OF_LIST) {
