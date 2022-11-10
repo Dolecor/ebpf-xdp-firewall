@@ -52,13 +52,13 @@ __get_filter_verdict(const struct filterrec *filter, const struct iphdr *ip,
     }
 
     if (upper->protocol != ICMP) {
-        if (!((upper->hdr.ports->source == XDPFW_PORT_ANY)
+        if (!((filter->src_port == XDPFW_PORT_ANY)
               || ((upper->hdr.ports->source >= filter->src_port)
                   && (upper->hdr.ports->source <= filter->src_port_end)))) {
             goto out;
         }
 
-        if (!((upper->hdr.ports->dest == XDPFW_PORT_ANY)
+        if (!((filter->dst_port == XDPFW_PORT_ANY)
               || ((upper->hdr.ports->dest >= filter->dst_port)
                   && (upper->hdr.ports->dest <= filter->dst_port_end)))) {
             goto out;
