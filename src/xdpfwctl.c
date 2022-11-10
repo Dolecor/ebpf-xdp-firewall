@@ -43,6 +43,7 @@ int do_start(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s",  pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_start(opt, pin_dir);
 }
@@ -64,6 +65,7 @@ int do_stop(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_stop(opt, pin_dir);
 }
@@ -93,6 +95,7 @@ int do_status(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_status(opt, pin_dir);
 }
@@ -114,6 +117,7 @@ int do_flist(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_filter_list(opt, pin_dir);
 }
@@ -149,18 +153,35 @@ static struct prog_option fadd_options[] = {
                   .required = true,
                   .typearg = upper_protocols,
                   .help = "Specify <proto> of filter"),
+
     DEFINE_OPTION("srcip", OPT_IPADDR, struct filteraddopt, src_ip,
                   .metavar = "<ip>",
-                  .help = "Specify source ip of filter (default: 0.0.0.0 (any))"),
+                  .help = "Specify source ip of filter"),
+    DEFINE_OPTION("srcwc", OPT_IPADDR, struct filteraddopt, src_wcard,
+                  .metavar = "<wcard>",
+                  .help = "Specify wildcard of source ip (default: 0.0.0.0 (host))"),
+
     DEFINE_OPTION("dstip", OPT_IPADDR, struct filteraddopt, dst_ip,
                   .metavar = "<ip>",
-                  .help = "Specify dest ip of filter (default: 0.0.0.0 (any))"),
+                  .help = "Specify dest ip of filter"),
+    DEFINE_OPTION("dstwc", OPT_IPADDR, struct filteraddopt, dst_wcard,
+                  .metavar = "<wcard>",
+                  .help = "Specify wildcard of dest ip (default: 0.0.0.0 (host))"),
+
     DEFINE_OPTION("sport", OPT_U16, struct filteraddopt, src_port,
                   .metavar = "<port>",
                   .help = "Specify source port of filter (default: 0 (any))"),
+    DEFINE_OPTION("spend", OPT_U16, struct filteraddopt, src_port_end,
+                  .metavar = "<port>",
+                  .help = "Specify end of source port range (default: 0 (==sport))"),
+
     DEFINE_OPTION("dport", OPT_U16, struct filteraddopt, dst_port,
                   .metavar = "<port>",
                   .help = "Specify dest port of filter (default: 0 (any))"),
+    DEFINE_OPTION("dpend", OPT_U16, struct filteraddopt, dst_port_end,
+                  .metavar = "<port>",
+                  .help = "Specify source port of filter (default: 0 (==dport))"),
+
     DEFINE_OPTION("id", OPT_U32, struct filteraddopt, insert_at,
                   .short_opt = 'i',
                   .metavar = "<id>",
@@ -170,9 +191,13 @@ static struct prog_option fadd_options[] = {
 
 static const struct filteraddopt defaults_fadd = {
     .src_ip = { .addr.addr4.s_addr = XDPFW_IP_ANY },
+    .src_wcard = { .addr.addr4.s_addr = XDPFW_IP_WILDCARD_HOST },
     .dst_ip = { .addr.addr4.s_addr = XDPFW_IP_ANY },
+    .dst_wcard = { .addr.addr4.s_addr = XDPFW_IP_WILDCARD_HOST },
     .src_port = XDPFW_PORT_ANY,
+    .src_port_end = PORT_EQ,
     .dst_port = XDPFW_PORT_ANY,
+    .dst_port_end = PORT_EQ,
     .insert_at = INSERT_AT_NO_SET,
 };
 
@@ -182,6 +207,7 @@ int do_fadd(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_filter_add(opt, pin_dir);
 }
@@ -208,6 +234,7 @@ int do_frm(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_filter_remove(opt, pin_dir);
 }
@@ -238,6 +265,7 @@ int do_reset(const void *cfg, const char *pin_root_path)
     char pin_dir[PATH_MAX];
 
     sprintf(pin_dir, "%s/%s", pin_root_path, opt->iface.ifname);
+    make_dir_subdir(pin_root_path, opt->iface.ifname);
 
     return xdpfw_reset(opt, pin_dir);
 }

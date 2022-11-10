@@ -11,6 +11,9 @@
 #define PORTSTRLEN 6
 #define ANY_IP XDPFW_IP_ANY
 #define ANY_PORT XDPFW_PORT_ANY
+#define WILDCARD_HOST XDPFW_IP_WILDCARD_HOST
+#define WILDCARD_ANY XDPFW_IP_WILDCARD_ANY
+#define HOST_STR "host"
 #define ANY_STR "any"
 
 struct xdp_program *

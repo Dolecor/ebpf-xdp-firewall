@@ -18,17 +18,22 @@
 #define XDPFW_IP_ANY INADDR_ANY
 #define XDPFW_PORT_ANY (__u16)0
 
-typedef __u8 filter_type_t;
+#define XDPFW_IP_WILDCARD_ANY 0xFFFFFFFF    /* 255.255.255.255 */
+#define XDPFW_IP_WILDCARD_HOST 0            /* 0.0.0.0 */
 
-/* TODO: add wildcard to IPs and range to ports */
+typedef __u8 filter_type_t;
 
 #pragma pack(push)
 #pragma pack(1)
 struct filterrec {
     __be32 src_ip;
+    __be32 src_wcard;
     __be32 dst_ip;
+    __be32 dst_wcard;
     __u16 src_port;
+    __u16 src_port_end;
     __u16 dst_port;
+    __u16 dst_port_end;
     __u8 protocol;
     filter_type_t type;
 };

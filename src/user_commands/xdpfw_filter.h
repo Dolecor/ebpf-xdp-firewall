@@ -11,15 +11,20 @@ struct filterlistopt {
 };
 
 #define INSERT_AT_NO_SET 0xFFFFFFFF
+#define PORT_EQ 0
 
 struct filteraddopt {
     struct iface iface;
     filter_type_t action;
     enum upper_proto protocol;
     struct ip_addr src_ip;
+    struct ip_addr src_wcard;
     struct ip_addr dst_ip;
+    struct ip_addr dst_wcard;
     uint16_t src_port;
+    uint16_t src_port_end;
     uint16_t dst_port;
+    uint16_t dst_port_end;
     uint32_t insert_at;
 };
 

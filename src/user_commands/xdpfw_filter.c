@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 
 #include <bpf/bpf.h>
@@ -17,10 +18,12 @@
 #include "xdpfw_filter.h"
 
 #define PRINT_HEADER \
-    "| id| type | proto |     srcip     | sport |     dstip     | dport |\n"
+    "| id| type | proto |     src ip    | sp beg |     dst ip    | dp beg |\n" \
+    "|   |      |       |    wildcard   | sp end |    wildcard   | dp end |\n"
 #define PRINT_SEP \
-    "+---+------+-------+---------------+-------+---------------+-------+\n"
-#define FILTER_FMT "|%3u|%-6s| %-5s |%-15s| %-5s |%-15s| %-5s |\n"
+    "+---+------+-------+---------------+--------+---------------+--------+\n"
+#define FILTER_FMT_ROW1 "|%3u|%-6s| %-5s |%-15s| %-5s  |%-15s| %-5s  |\n"
+#define FILTER_FMT_ROW2 "|   |      |       |%-15s| %-5s  |%-15s| %-5s  |\n"
 
 static char *str_actions[] = {
     [FILTER_TYPE_END_OF_LIST] = "end",
@@ -34,14 +37,50 @@ static char *str_protos[] = {
     [UDP] = "udp",
 };
 
+static void ports_to_str(uint16_t port_beg, uint16_t port_end,
+                           char *port_beg_str, char *port_end_str)
+{
+    port_beg = ntohs(port_beg);
+    port_end = ntohs(port_end);
+    if (port_beg == ANY_PORT) {
+        port_end_str[0] = '\0';
+    } else if (port_beg == port_end) {
+        strcpy(port_end_str, "eq");
+    } else {
+        port_to_str(port_end, port_end_str);
+    }
+
+    port_to_str(port_beg, port_beg_str);
+}
+
+static void ip_to_str(uint32_t ip, uint32_t wildcard,
+                      char *ip_str, char *wildcard_str)
+{
+    if (wildcard == WILDCARD_ANY) {
+        strcpy(ip_str, ANY_STR);
+        wildcard_str[0] = '\0';
+    } else if (wildcard == WILDCARD_HOST) {
+        inet_ntop(AF_INET, &ip, ip_str, INET_ADDRSTRLEN);
+        strcpy(wildcard_str, HOST_STR);
+    } else {
+        inet_ntop(AF_INET, &ip, ip_str, INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &wildcard, wildcard_str, INET_ADDRSTRLEN);
+    }
+}
+
+
 static int print_filter_list(const char *pin_root_path)
 {
     int map_fd;
     struct filterrec filter;
     char srcip_str[INET_ADDRSTRLEN];
+    char src_wcard_str[INET_ADDRSTRLEN];
     char dstip_str[INET_ADDRSTRLEN];
-    char sport_str[PORTSTRLEN];
-    char dport_str[PORTSTRLEN];
+    char dst_wcard_str[INET_ADDRSTRLEN];
+    char sport_beg_str[PORTSTRLEN];
+    char sport_end_str[PORTSTRLEN];
+    char dport_beg_str[PORTSTRLEN];
+    char dport_end_str[PORTSTRLEN];
 
     map_fd =
         get_pinned_map_fd(pin_root_path, textify(XDPFW_FILTER_MAP_NAME), NULL);
@@ -55,7 +94,7 @@ static int print_filter_list(const char *pin_root_path)
 
     for (size_t i = 0; i < XDPFW_FILTER_MAX_ENTRIES; ++i) {
         if (bpf_map_lookup_elem(map_fd, &i, &filter) != 0) {
-            pr_debug("bpf_map_lookup_elem failed (key:%zu\n", i);
+            pr_debug("bpf_map_lookup_elem failed (key:%zu)\n", i);
         }
 
         if (filter.type == FILTER_TYPE_EMPTY_CELL) {
@@ -63,17 +102,24 @@ static int print_filter_list(const char *pin_root_path)
         }
 
         if (filter.type == FILTER_TYPE_END_OF_LIST) {
-            printf(FILTER_FMT, (uint32_t)i, str_actions[filter.type],
+            printf(FILTER_FMT_ROW1, (uint32_t)i, str_actions[filter.type],
                    "---", "---", "---", "---", "---");
             break;
         }
 
-        printf(FILTER_FMT, (uint32_t)i, str_actions[filter.type],
-               str_protos[filter.protocol],
-               inaddr_to_str(filter.src_ip, srcip_str),
-               port_to_str(filter.src_port, sport_str),
-               inaddr_to_str(filter.dst_ip, dstip_str),
-               port_to_str(filter.dst_port, dport_str));
+        ip_to_str(filter.src_ip, filter.src_wcard, srcip_str, src_wcard_str);
+        ip_to_str(filter.dst_ip, filter.dst_wcard, dstip_str, dst_wcard_str);
+        ports_to_str(filter.src_port, filter.src_port_end,
+                     sport_beg_str, sport_end_str);
+        ports_to_str(filter.dst_port, filter.dst_port_end,
+                     dport_beg_str, dport_end_str);
+
+        printf(FILTER_FMT_ROW1, (uint32_t)i,
+               str_actions[filter.type], str_protos[filter.protocol],
+               srcip_str, sport_beg_str, dstip_str, dport_beg_str);
+        printf(FILTER_FMT_ROW2,
+               src_wcard_str, sport_end_str, dst_wcard_str, dport_end_str);
+        printf(PRINT_SEP);
     }
 
     if (map_fd >= 0) {
@@ -221,18 +267,44 @@ int xdpfw_filter_add(const struct filteraddopt *opt, const char *pin_root_path)
         return -1;
     }
 
+    if ((opt->src_port_end != PORT_EQ)
+        && (opt->src_port > opt->src_port_end)) {
+        pr_warn("Invalid source port range, beg (%u) > end (%u)\n",
+                opt->src_port, opt->src_port_end);
+        return -1;
+    }
+
+    if ((opt->dst_port_end != PORT_EQ)
+        && (opt->dst_port > opt->dst_port_end)) {
+        pr_warn("Invalid dest port range, beg (%u) > end (%u)\n",
+                opt->dst_port, opt->dst_port_end);
+        return -1;
+    }
+
     filter.type = opt->action;
     filter.protocol = opt->protocol;
+
     filter.src_ip = opt->src_ip.addr.addr4.s_addr;
+    filter.src_wcard = opt->src_wcard.addr.addr4.s_addr;
+
     filter.dst_ip = opt->dst_ip.addr.addr4.s_addr;
+    filter.dst_wcard = opt->dst_wcard.addr.addr4.s_addr;
+
     filter.src_port = htons(opt->src_port);
+    filter.src_port_end = (opt->src_port_end == PORT_EQ)
+                              ? filter.src_port
+                              : htons(opt->src_port_end);
+
     filter.dst_port = htons(opt->dst_port);
+    filter.dst_port_end = (opt->dst_port_end == PORT_EQ)
+                              ? filter.dst_port
+                              : htons(opt->dst_port_end);
 
     return add_filter(pin_root_path, &filter, opt->insert_at);
 }
 
 int xdpfw_filter_remove(const struct filterrmopt *opt,
-                        __unused const char *pin_root_path)
+                        const char *pin_root_path)
 {
     return remove_filter(pin_root_path, opt->filter_id);
 }

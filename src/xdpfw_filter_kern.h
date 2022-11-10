@@ -2,7 +2,7 @@
 
 #ifndef XDPFW_FILTER_KERN_H
 #define XDPFW_FILTER_KERN_H
- 
+
 #include <linux/in.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
@@ -52,22 +52,24 @@ __get_filter_verdict(const struct filterrec *filter, const struct iphdr *ip,
     }
 
     if (upper->protocol != ICMP) {
-        if (!((filter->dst_port == XDPFW_PORT_ANY)
-              || (upper->hdr.ports->dest == filter->dst_port))) {
+        if (!((upper->hdr.ports->source == XDPFW_PORT_ANY)
+              || ((upper->hdr.ports->source >= filter->src_port)
+                  && (upper->hdr.ports->source <= filter->src_port_end)))) {
             goto out;
         }
 
-        if (!((filter->src_port == XDPFW_PORT_ANY)
-              || (upper->hdr.ports->source == filter->src_port))) {
+        if (!((upper->hdr.ports->dest == XDPFW_PORT_ANY)
+              || ((upper->hdr.ports->dest >= filter->dst_port)
+                  && (upper->hdr.ports->dest <= filter->dst_port_end)))) {
             goto out;
         }
     }
 
-    if (!((filter->dst_ip == XDPFW_IP_ANY) || (ip->daddr == filter->dst_ip))) {
+    if (!((ip->saddr & ~filter->src_wcard) == filter->src_ip)) {
         goto out;
     }
 
-    if (!((filter->src_ip == XDPFW_IP_ANY) || (ip->saddr == filter->src_ip))) {
+    if (!((ip->daddr & ~filter->dst_wcard) == filter->dst_ip)) {
         goto out;
     }
 

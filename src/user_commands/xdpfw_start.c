@@ -16,7 +16,8 @@
 #include "xdpfw_helpers.h"
 #include "xdpfw_start.h"
 
-static int load_xdp_program(const struct startopt *opt, const char *pin_root_path)
+static int load_xdp_program(const struct startopt *opt,
+                            const char *pin_root_path)
 {
     struct xdp_program *xdp_prog = NULL;
     LIBBPF_OPTS(bpf_object_open_opts, opts, .pin_root_path = pin_root_path);

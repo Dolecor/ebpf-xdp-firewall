@@ -24,11 +24,11 @@ static int remove_maps(const char *pin_root_path)
 
     pin_fd = open(pin_root_path, O_DIRECTORY);
     if (pin_fd < 0) {
-		err = -errno;
-		pr_warn("Unable to open pin directory %s: %s\n",
-			pin_root_path, strerror(-err));
-		goto out;
-	}
+        err = -errno;
+        pr_warn("Unable to open pin directory %s: %s\n",
+                pin_root_path, strerror(-err));
+        goto out;
+    }
 
     err = unlink_pinned_map(pin_fd, textify(XDP_STATS_MAP_NAME));
     if (err) {
@@ -48,7 +48,8 @@ out:
     return err;
 }
 
-static int unload_xdp_program(const struct stopopt *opt, const char *pin_root_path)
+static int unload_xdp_program(const struct stopopt *opt,
+                              const char *pin_root_path)
 {
     struct xdp_program *xdp_prog;
     struct xdp_multiprog *xdp_mp;
@@ -85,7 +86,7 @@ static int unload_xdp_program(const struct stopopt *opt, const char *pin_root_pa
     err = remove_maps(pin_root_path);
     if (err) {
         pr_warn("Tried to remove maps but failed (%s).", strerror(-err));
-		goto out;
+        goto out;
     }
 
 out:

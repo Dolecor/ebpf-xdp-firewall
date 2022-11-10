@@ -63,7 +63,7 @@ static int add_end_of_list(int map_fd, uint32_t end_id)
     return bpf_map_update_elem(map_fd, &end_id, &end_filter, 0);
 }
 
-static int reset_filters(__unused const char *pin_root_path)
+static int reset_filters(const char *pin_root_path)
 {
     int map_fd;
 
@@ -87,7 +87,7 @@ static int reset_filters(__unused const char *pin_root_path)
 
 static int reset(const char *pin_root_path, bool stats, bool filters)
 {
-    if (!stats && ! filters) {
+    if (!stats && !filters) {
         printf("Options are not specified\n");
         return -1;
     }
@@ -95,7 +95,7 @@ static int reset(const char *pin_root_path, bool stats, bool filters)
     if (stats) {
         reset_stats(pin_root_path);
     }
-    
+
     if (filters) {
         reset_filters(pin_root_path);
     }
@@ -103,8 +103,7 @@ static int reset(const char *pin_root_path, bool stats, bool filters)
     return 0;
 }
 
-int xdpfw_reset(__unused const struct resetopt *opt,
-                __unused const char *pin_root_path)
+int xdpfw_reset(const struct resetopt *opt, const char *pin_root_path)
 {
     return reset(pin_root_path, opt->stats, opt->filters);
 }

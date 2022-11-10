@@ -59,10 +59,9 @@ xdpfw__from_xdp_multiprog_from_iface(int ifindex, struct xdp_multiprog **xdp_mp,
         }
     }
 
-    pr_debug(
-        "XDP loaded on device, but it is "
-        "neither xdp-dispatcher with %s, nor %s itself in legacy mode\n",
-        COMMON_PROG_NAME, COMMON_PROG_NAME);
+    pr_debug("XDP loaded on device, but it is "
+             "neither xdp-dispatcher with %s, nor %s itself in legacy mode\n",
+             COMMON_PROG_NAME, COMMON_PROG_NAME);
 
     xdp_prog = ERR_PTR(-ENOENT);
     xdp_multiprog__close(*xdp_mp);
